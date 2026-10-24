@@ -1,0 +1,541 @@
+openapi: 3.1.0
+info:
+  title: Didar CRM API Specification (Reverse-Engineered & Developer Guide)
+  version: 2.4.0
+  description: |
+    Comprehensive developer-grade API specification for Didar CRM (دیدار).
+    Compiled via reverse engineering of official npm packages (n8n-nodes-didar-crm v1.1.7),
+    production Angular client bundles (app.didar.me), and official WordPress integrations.
+  contact:
+    name: Abolfazl Moeini
+    url: https://github.com/abolfazl-moeini
+servers:
+  - url: https://app.didar.me
+    description: Primary Production Gateway
+  - url: https://api.didar.me
+    description: Alternate API Edge Gateway
+
+security:
+  - apiKeyAuth: []
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: query
+      name: apikey
+      description: API Key issued in Didar CRM panel under Settings -> API Keys.
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: LocoAuthCookie
+      description: Web session cookie used by app.didar.me browser interface.
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        Response:
+          type: [object, array, string, number, boolean, "null"]
+        Error:
+          type: ["string", "null"]
+          description: Persian error message if request failed
+
+    PersonContact:
+      type: object
+      required:
+        - Type
+        - LastName
+        - OwnerId
+      properties:
+        Id:
+          type: string
+          format: uuid
+          default: "00000000-0000-0000-0000-000000000000"
+        Type:
+          type: string
+          enum: [Person]
+        FirstName:
+          type: string
+        LastName:
+          type: string
+        Title:
+          type: string
+        OwnerId:
+          type: string
+          format: uuid
+        CompanyName:
+          type: string
+        CompanyId:
+          type: string
+          format: uuid
+        MobilePhone:
+          type: string
+        WorkPhone:
+          type: string
+        WorkPhoneExtension:
+          type: string
+        Email:
+          type: string
+        IsVIP:
+          type: boolean
+        CustomerCode:
+          type: string
+        NationalCode:
+          type: string
+        ZipCode:
+          type: string
+        VisibilityType:
+          type: string
+          enum: [Owner, OwnerGroup, OwnerSubGroup, All]
+        BackgroundInfo:
+          type: string
+        Fields:
+          type: object
+          additionalProperties: true
+
+    CompanyContact:
+      type: object
+      required:
+        - Type
+        - FirstName
+        - OwnerId
+      properties:
+        Id:
+          type: string
+          format: uuid
+        Type:
+          type: string
+          enum: [Company]
+        FirstName:
+          type: string
+          description: Company Name
+        OwnerId:
+          type: string
+          format: uuid
+        MobilePhone:
+          type: string
+        WorkPhone:
+          type: string
+        Email:
+          type: string
+        IsVIP:
+          type: boolean
+        CustomerCode:
+          type: string
+        EconomicIssue:
+          type: string
+        RegistrationNumber:
+          type: string
+        NationalID:
+          type: string
+        ZipCode:
+          type: string
+        VisibilityType:
+          type: string
+          enum: [Owner, OwnerGroup, OwnerSubGroup, All]
+
+    DealItem:
+      type: object
+      required:
+        - ProductId
+        - Quantity
+        - UnitPrice
+      properties:
+        ProductId:
+          type: string
+          format: uuid
+        VariantId:
+          type: string
+          format: uuid
+        ProductCode:
+          type: string
+        Quantity:
+          type: number
+        UnitPrice:
+          type: number
+        Price:
+          type: number
+        Discount:
+          type: number
+        Description:
+          type: string
+
+    Deal:
+      type: object
+      required:
+        - Title
+        - OwnerId
+        - PipelineId
+        - PipelineStageId
+        - Status
+      properties:
+        Id:
+          type: string
+          format: uuid
+        Title:
+          type: string
+        OwnerId:
+          type: string
+          format: uuid
+        PersonId:
+          type: string
+          format: uuid
+        CompanyId:
+          type: string
+          format: uuid
+        PipelineId:
+          type: string
+          format: uuid
+        PipelineStageId:
+          type: string
+          format: uuid
+        Status:
+          type: string
+          enum: [Pending, Won, Lost]
+        Price:
+          type: number
+        TaxPercent:
+          type: number
+        IsWon:
+          type: boolean
+        IsPaid:
+          type: boolean
+        VisibilityType:
+          type: string
+          enum: [Owner, OwnerGroup, OwnerSubGroup, All]
+        SourceId:
+          type: string
+          format: uuid
+        SourceOther:
+          type: string
+        LostReasonId:
+          type: string
+          format: uuid
+        LostReasonNote:
+          type: string
+        Description:
+          type: string
+        LabelIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        Fields:
+          type: object
+          additionalProperties: true
+
+    ProductVariant:
+      type: object
+      required:
+        - Title
+        - UnitPrice
+      properties:
+        Id:
+          type: string
+          format: uuid
+        Title:
+          type: string
+        TitleForInvoice:
+          type: string
+        VariantCode:
+          type: string
+        UnitPrice:
+          type: number
+        IsDefault:
+          type: boolean
+        IsDeleted:
+          type: boolean
+
+    Product:
+      type: object
+      required:
+        - Title
+        - UnitPrice
+      properties:
+        Id:
+          type: string
+          format: uuid
+        Title:
+          type: string
+        Code:
+          type: string
+        Unit:
+          type: string
+        UnitPrice:
+          type: number
+        ProductCategoryId:
+          type: string
+          format: uuid
+        IsActive:
+          type: boolean
+        Description:
+          type: string
+        Variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductVariant'
+        Fields:
+          type: object
+          additionalProperties: true
+
+paths:
+  /api/contact/save:
+    post:
+      summary: Create or Update Contact (Person or Company)
+      tags: [Contacts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Contact]
+              properties:
+                Contact:
+                  oneOf:
+                    - $ref: '#/components/schemas/PersonContact'
+                    - $ref: '#/components/schemas/CompanyContact'
+                SegmentIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/contact/getbyphonenumber:
+    post:
+      summary: Fast Lookup Contact by Phone/Mobile Number
+      tags: [Contacts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [MobilePhone]
+              properties:
+                MobilePhone:
+                  type: string
+                  example: "09123456789"
+      responses:
+        '200':
+          description: Contact list or empty array
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/contact/PersonSearch:
+    post:
+      summary: Search Persons with Filters and Pagination
+      tags: [Contacts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Criteria:
+                  type: object
+                From:
+                  type: integer
+                  default: 0
+                Limit:
+                  type: integer
+                  default: 20
+      responses:
+        '200':
+          description: Paginated search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/deal/save_v2:
+    post:
+      summary: Create or Update Deal with Line Items
+      tags: [Deals]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Deal]
+              properties:
+                Deal:
+                  $ref: '#/components/schemas/Deal'
+                DealItems:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DealItem'
+      responses:
+        '200':
+          description: Created/updated deal details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/deal/search_v2:
+    post:
+      summary: Search Deals by Criteria, Stage and Dates
+      tags: [Deals]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Criteria:
+                  type: object
+                From:
+                  type: integer
+                  default: 0
+                Limit:
+                  type: integer
+                  default: 20
+      responses:
+        '200':
+          description: Matching deals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/pipeline/list/{type}:
+    post:
+      summary: Get Pipelines & Stages (0 for Deals, 1 for Cases)
+      tags: [Pipelines]
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: integer
+            enum: [0, 1]
+          description: 0 = Deal Pipelines, 1 = Case Pipelines
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Pipelines list with stages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/product/save:
+    post:
+      summary: Create or Update Product with Variants
+      tags: [Products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Product]
+              properties:
+                Product:
+                  $ref: '#/components/schemas/Product'
+      responses:
+        '200':
+          description: Product saved response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/product/getproductbycodes:
+    post:
+      summary: Batch Lookup Products by SKU/Codes
+      tags: [Products]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Code]
+              properties:
+                Code:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Array of matching products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/calllog/insert:
+    get:
+      summary: Inbound CallerID Popup Notification (VoIP PBX)
+      tags: [Telephony]
+      parameters:
+        - name: apikey
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: number
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Caller phone number
+        - name: internalnumber
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Agent PBX extension number
+      responses:
+        '200':
+          description: Call logged and popup dispatched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/search/search:
+    post:
+      summary: Universal Search (دیداریاب)
+      tags: [Universal Search]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [Keyword, Types]
+              properties:
+                Keyword:
+                  type: string
+                Types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [Person, Company, Deal, Case, Product]
+      responses:
+        '200':
+          description: Search results grouped by entity type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
