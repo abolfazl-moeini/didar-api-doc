@@ -49,6 +49,9 @@ Didar includes a lightweight product catalog with SKU codes, categories, pricing
 > [!TIP]
 > When adding variants, ensure each variant object has `IsDeleted: false` and `TitleForInvoice` populated (usually set identical to `Title`), which matches Didar's internal database rules.
 
+> [!IMPORTANT]
+> **Strict Category Validation**: In Didar CRM backend validation, `ProductCategoryId` is mandatory. If omitted, passed as an empty string `""`, or set to null, the API rejects the request with `{"Error": "product category is empty"}`. Integrations (like WooCommerce or ERP connectors) must map product categories or enforce a fallback category GUID (from `/api/product/categories`) to prevent sync failure.
+
 ### Response
 ```json
 {

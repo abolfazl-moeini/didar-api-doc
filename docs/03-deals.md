@@ -110,6 +110,13 @@ Creates a new deal or updates an existing deal (if `"Id"` is provided in `"Deal"
 * `"Won"`: Deal closed successfully (فروش موفق).
 * `"Lost"`: Deal lost (لغو شده یا انصراف).
 
+> [!IMPORTANT]
+> **Key Validation Rules & Common Pitfalls (`deal/save_v2`)**:
+> 1. **CompanyId Zero GUID**: `CompanyId` is strictly required. For individual / B2C orders without a company, you MUST pass `"00000000-0000-0000-0000-000000000000"`. If omitted or invalid, Didar throws `{"Error": "person and company both are empty"}`.
+> 2. **Status Enum**: `Status` in `save_v2` is a string enum: `"Pending"`, `"Won"`, or `"Lost"`. (Do not pass numeric 0/1/2 in v2).
+> 3. **Pipeline & Stage Requirements**: Both `PipelineId` and `PipelineStageId` must be valid UUIDs matching a configured pipeline and stage.
+> 4. **Soft Delete**: To delete/cancel a deal, invoke `POST /api/deal/save_v2` with `{"Deal": {"Id": "{DEAL_ID}", "IsDeleted": true}}`.
+
 ### Response
 ```json
 {
